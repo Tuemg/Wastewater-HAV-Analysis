@@ -1,0 +1,969 @@
+---
+title: "Wastewater_HAV Analysis"
+author: ""
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+  #pdf: default
+editor: visual
+theme: cosmo
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Introduction
+
+This report presents the analysis of surveillance data to assess:
+
+\-
+
+\-
+
+\-
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+library(glmmTMB)
+library(broom.mixed)
+library(dplyr)
+library(knitr)
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(lme4)
+library(performance)
+library(sjPlot)
+library(gt)
+```
+
+# Results
+
+## Descriptive Statistics
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(lubridate)
+library(janitor)
+# Load dataset
+waste <- read.csv("data/Wastewatergeneral-HAV.csv")
+waste <- clean_names(waste) # data clean
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Clean Outcome Variable
+# colSums(is.na(waste)) # Missing
+
+# Clean Outcome Variable
+waste <- waste %>%
+  mutate(
+    hav_result = trimws(hav_result),
+    hav_result = tolower(hav_result)
+  )
+# Check
+#unique(waste$hav_result)
+
+# Create Analysis Dataset
+waste_analysis <- waste %>%
+  filter(hav_result %in% c("positive", "negative"))
+
+#unique(waste_analysis$hav_result)
+
+# Create Binary Outcome
+waste_analysis <- waste_analysis %>%
+  mutate(
+    hav_result_bin = ifelse(hav_result == "positive", 1, 0)
+  )
+
+# Verify it
+#table(waste_analysis$hav_result)
+#table(waste_analysis$hav_result_bin)
+
+# Compute Positivity Rate
+# mean(waste_analysis$hav_result_bin) * 100
+# Summary Table
+su=waste_analysis %>%
+  count(hav_result) %>%
+  mutate(
+    percent = n / sum(n) * 100
+  )
+
+# Convert Date Properly for Trend Analysis
+waste_analysis$sample_collection_date <- mdy(waste_analysis$sample_collection_date)
+
+```
+
+### Positive Rate and summary table
+
+-   Positive rate of HAV result is `r round((mean(waste_analysis$hav_result_bin) * 100), 3)`.
+-   As shown in Table @tbl-sumt, out of `6329` valid waste-water tested samples, `1993` were hepitetis A virus (HAV) positive test result and `4336` HAV_test negative result.
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+# Compute Positivity Rate
+prhav=mean(waste_analysis$hav_result_bin) * 100
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-sumt
+#| tbl-cap: "Summary Statistics"
+# Summary Table
+sumt=waste_analysis %>%
+  count(hav_result) %>%
+  mutate(
+    percent = n / sum(n) * 100
+  )
+knitr::kable(sumt)
+```
+
+### Monthly positive Trend (Epidemic Curve)
+
+As @fig-moncases indicates, the monthly positivity trend of
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+# Monthly Positivty Trend
+monthly_trend <- waste_analysis %>%
+  mutate(month = floor_date(sample_collection_date, "month")) %>%
+  group_by(month) %>%
+  summarise(
+    positivity = mean(hav_result_bin) * 100,
+    n = n()
+  )
+
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-ptrend
+#| fig-cap: "Monthly Positivity Trend"
+#ggplot(monthly_trend,
+ #      aes(x = month, y = positivity)) +
+#  geom_line() +
+#  geom_point()
+
+```
+
+### Positive by province and district
+
+-   Positivity trend by provincee is @tbl-pbp
+
+-   Positivity trend by district is @tbl-pbd
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-pbp
+#| tbl-cap: "Positivity Trend by Provinces"
+# Positivity by Province
+pbp=waste_analysis %>%
+  group_by(site_province) %>%
+  summarise(
+    positivity = mean(hav_result_bin) * 100,
+    total_tests = n()
+  ) %>%
+  arrange(desc(positivity))
+
+knitr::kable(pbp)
+
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-pbd
+#| tbl-cap: "Positivity Trend by District"
+
+# Positivity by District
+pbd=waste_analysis %>%
+  group_by(district_name ) %>%
+  summarise(
+    positivity = mean(hav_result_bin) * 100,
+    total_tests = n()
+  ) %>%
+  arrange(desc(positivity))
+
+knitr::kable(pbd)
+```
+
+### Laboratory Quality Indicators
+
+```{r}
+#| warning: false 
+#| message: false 
+#| echo: false  
+
+# Failed test rate 
+failed_rate=mean(waste$hav_result == "failed") * 100  
+# Missing outcome rate 
+#missing_rate=mean(waste$hav_result == "") * 100
+```
+
+-   Failed test rate of the laboratory is `r round(failed_rate, 3)`.
+-   Missing HAV test rate of the laboratory `r round(mean(waste$hav_result == "") * 100, 3)`.
+
+## Multilevel Logistic Regression
+
+### Intraclass Correlation for site_province Variation
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+### Multilevel Logistic Regression
+# A. Site Province Level
+model_province <- glmer(
+  hav_result_bin ~ (1 | site_province),
+  data = waste_analysis,
+  family = binomial()
+)
+
+# B. District level
+model_district <- glmer(
+  hav_result_bin ~ (1 | district_name),
+  data = waste_analysis,
+  family = binomial()
+)
+
+# C. Site name level
+model_site_name <- glmer(
+  hav_result_bin ~ (1 | site_name),
+  data = waste_analysis,
+  family = binomial()
+)
+
+# Random intercept for site_name
+
+model1 <- glmer(
+  hav_result_bin ~ site_province + (1 | site_name),
+  data = waste_analysis,
+  family = binomial()
+)
+
+# More Advanced Hierarchy (three level)
+model2 <- glmer(
+  hav_result_bin ~ site_province + district_name + (1 | site_name),
+  data = waste_analysis,
+  family = binomial()
+)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+performance::icc(model_province)
+
+```
+
+### Intraclass Correlation for District_name Variation
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+performance::icc(model_district)
+```
+
+### Intraclass Correlation for site_name Variation
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+performance::icc(model_site_name)
+```
+
+-   A mixed-effects logistic regression with a random intercept for province and district showed that variation across them (province-level ICC ≈ 3.3%, and district level ICC ≈ 5.4%), indicating some clustering of the outcome within provinces and districts.
+
+-   Relatively the variation is higher in site_name level (ICC ≈ 9.5%)
+
+-   @tbl-mlrim indicates, model2; the three level mixed effects model better fits the data.
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-mlrim
+#| tbl-cap: "Multilevel models assessment and comparisons"
+
+AIC(model1, model2)
+```
+
+## Three-Level Hierarchical Analysis based on the selected Modlel
+
+From the advanced three level hierarchical modeling @tbl-m3lr
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-m3lr
+#| tbl-cap: "Three level Multilevel Logistic Regression"
+#######################################
+# Next Advanced Analyses
+##################################
+
+### Multilevel Logistic Regression
+
+# More Advanced Hierarchy
+model2 <- glmer(
+  hav_result_bin ~ site_province + district_name + (1 | site_name),
+  data = waste_analysis,
+  family = binomial()
+)
+summary(model2)
+# knitr::kable(round(summary(model2)$coefficients, 3))
+ #vc2=as.data.frame(VarCorr(model2))
+#knitr::kable(round(vc2, 3), caption = "Random effects Model for Site Names")
+
+```
+
+### Odds Ratios
+
+Odds ratio of @tbl-m3lrOR
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-m3lrOR
+#| tbl-cap: "Three level Multilevel Estimated Odds Ratio (OR)"
+#######################################
+# Odds Ratio
+OR <- exp(fixef(model2))
+
+knitr::kable(
+  data.frame(
+    Term = names(OR),
+    Odds_Ratio = round(OR, 3)
+  )
+)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Model Performance
+#performance(model2)
+#knitr::kable(round(performance(model2),3), caption = "Model Performance")
+```
+
+### Visualization of Model Results
+
+Visualization plot @fig-mr3
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-mr3
+#| fig-cap: "Visualization of three-level Model Results"
+sjPlot::plot_model(
+  model2,
+  type = "est",
+  show.values = TRUE,
+  value.offset = 0.3
+)
+```
+
+### Model Diagnostics
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Model Diagnostics
+library(DHARMa)
+
+isSingular(model2)
+
+sim_res <- simulateResiduals(model2)
+plot(sim_res)
+
+testDispersion(sim_res)
+
+testOutliers(sim_res)
+
+# Multicolinarity
+# library(car)
+# vif(lm(hav_result_bin ~ site_province + district_name,
+# data = waste_analysis))
+
+```
+
+## Time Trend Analysis
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+# Monthly Aggregate Counts
+monthly_counts <- waste_analysis %>%
+  mutate(month = floor_date(sample_collection_date, "month")) %>%
+  group_by(month) %>%
+  summarise(
+    positive_cases = sum(hav_result_bin),
+    total_tests = n(),
+    positivity = mean(hav_result_bin, na.rm = TRUE) * 100,
+    .groups = "drop"
+  )
+
+# Create Time Variable
+monthly_counts <- monthly_counts  %>%
+  arrange(month) %>%
+  mutate(
+    time = dense_rank(month)
+  )
+
+# Drop Missing values
+monthly_counts <- monthly_counts %>%
+  filter(!is.na(month))
+```
+
+Monthly hav case over time @fig-moncases shows a clear shift from very low hav case counts in 2020/2021 to 2022 to a major surge beginning in early 2024, followed by a gradual decline with continued variability through 2025-2026.
+
+-   Structural change beginning around 2023.A major epidemic wave in 2024.
+-   Transition in to a lower but still persistent transmission level afterward.
+-   2020/21 - 2022: cases stayed near zero, with occasional small spikes.
+-   2023: a gradual upward trend begins, with several moderate increases reaching around 30-40 cases. Early 2024: a sharp outbreak occurs, with cases rapidly climbing above 100.
+-   Mid 2024: the highest peak appears around 125-30 cases.
+-   Late 2024-2025: cases decline but remain elevated compared with earlier years, fluctuating roughly between 35 and 75.
+
+<!-- The post-peak fluctuations suggest the system may not yet have fully stabilized.-->
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-moncases
+#| fig-cap: "Monthly hav case over time"
+# Plot cases over time
+library(ggplot2)
+ggplot(monthly_counts, aes(x= month, y = positive_cases)) + 
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "monthly cases over time",
+       x = "month",
+       y = "Number of cases")
+```
+
+### Add Moving Average line
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+library(dplyr)
+library(ggplot2)
+library(zoo)
+# Add a Moving Average Trend Line
+monthly_counts <- monthly_counts %>%
+  arrange(month) %>%
+  mutate(MA_3 = rollmean(positive_cases, 3, fill = NA, align = "center"))
+
+ggplot(monthly_counts, aes(x = month)) +
+  geom_line(aes(y = positive_cases), color = "black") +
+  geom_point(aes(y = positive_cases), size = 1.5) +
+  geom_line(aes(y = MA_3), color = "blue", linewidth = 1.2) +
+  labs(
+    title = "Monthly Positive Cases",
+    y = "positive_cases"
+  ) +
+  theme_minimal()
+```
+
+### Detect Outbreaks
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Detect Outbreak
+mean_cases <- mean(monthly_counts$positive_cases, na.rm = TRUE)
+sd_cases <- sd(monthly_counts$positive_cases, na.rm = TRUE)
+
+threshold <- mean_cases + 2 * sd_cases
+
+monthly_counts$outbreak <- monthly_counts$positive_cases > threshold
+
+# Highlight outbreak Monthly
+ggplot(monthly_counts, aes(month, positive_cases)) +
+  geom_line() +
+  geom_point(aes(color = outbreak), size = 2) +
+  scale_color_manual(values = c("black", "red")) +
+  theme_minimal()
+```
+
+################################################################# 
+
+## Time Series Analysis after areal Aggregation
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Dataset B: 
+# Aggregate Counts
+aggreg_counts <- waste_analysis %>%
+  mutate(month = floor_date(sample_collection_date, "month")) %>%
+  group_by(site_province, district_name, site_name, month) %>%
+  summarise(
+    positive_cases = sum(hav_result_bin),
+    total_tests = n(),
+    positivity = mean(hav_result_bin, na.rm = TRUE) * 100,
+    .groups = "drop"
+  )
+```
+
+Creating Model data from the original dataset
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+# Create Time Variable
+aggreg_counts <- aggreg_counts  %>%
+  arrange(month) %>%
+  mutate(
+    time = dense_rank(month)
+  )
+# Drop Missing values
+model_data <- aggreg_counts %>%
+  filter(!is.na(site_province), !is.na(district_name), !is.na(site_name), !is.na(month))
+```
+
+Monthly hav case over time @fig-moncases1 shows a clear shift from very low hav case counts in 2020/2021 to 2022 to a major surge beginning in early 2024, followed by a gradual decline with continued variability through 2025-2026.
+
+-   Structural change beginning around 2023.A major epidemic wave in 2024.
+-   Transition in to a lower but still persistent transmission level afterward.
+-   2020/21 - 2022: cases stayed near zero, with occasional small spikes.
+-   2023: a gradual upward trend begins, with several moderate increases reaching around 30-40 cases. Early 2024: a sharp outbreak occurs, with cases rapidly climbing above 100.
+-   Mid 2024: the highest peak appears around 125-30 cases.
+-   Late 2024-2025: cases decline but remain elevated compared with earlier years, fluctuating roughly between 35 and 75.
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-moncases1
+#| fig-cap: "Monthly hav case over time-1"
+# Plot cases over time
+library(ggplot2)
+ggplot(aggreg_counts, aes(x= month, y = positive_cases)) + 
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "monthly cases over time-1",
+       x = "month",
+       y = "Number of cases")
+```
+
+### Add Moving Average line
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+library(dplyr)
+library(ggplot2)
+library(zoo)
+# Add a Moving Average Trend Line
+aggreg_counts <- aggreg_counts %>%
+  arrange(month) %>%
+  mutate(MA_3 = rollmean(positive_cases, 3, fill = NA, align = "center"))
+
+ggplot(aggreg_counts, aes(x = month)) +
+  geom_line(aes(y = positive_cases), color = "black") +
+  geom_point(aes(y = positive_cases), size = 1.5) +
+  geom_line(aes(y = MA_3), color = "blue", linewidth = 1.2) +
+  labs(
+    title = "Monthly Positive Cases",
+    y = "positive_cases"
+  ) +
+  theme_minimal()
+```
+
+### Detect Outbreaks
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Detect Outbreak
+mean_cases <- mean(aggreg_counts$positive_cases, na.rm = TRUE)
+sd_cases <- sd(aggreg_counts$positive_cases, na.rm = TRUE)
+
+threshold <- mean_cases + 2 * sd_cases
+
+aggreg_counts$outbreak <- aggreg_counts$positive_cases > threshold
+
+# Highlight outbreak Monthly
+ggplot(aggreg_counts, aes(month, positive_cases)) +
+  geom_line() +
+  geom_point(aes(color = outbreak), size = 2) +
+  scale_color_manual(values = c("black", "red")) +
+  theme_minimal()
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+# Check seasonality and Trend
+# Identify start time
+# head(monthly_counts$month)
+# min(monthly_counts$month, na.rm = TRUE)
+# Convert to time series objects
+#ts_pos_cases <- ts(monthly_counts$positive_cases,
+ #              start = c(2020, 7),
+  #             frequency = 12)
+
+# plot(ts_pos_cases)
+
+# Check Seasonality
+ts_pos_cases1 <- ts(aggreg_counts$positive_cases, frequency = 12)
+# decomp <- stl(ts_data, s.window = "periodic")
+# plot(decomp)
+```
+
+### Decomposition Plot
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Decomposition
+# decom=decompose(ts_pos_cases, s.window = "periodic")
+decom1=stl(ts_pos_cases1, s.window = "periodic")
+plot(decom1)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Examine Autocorrelation 
+# Autocorrelation Function (ACF)
+#acf(ts_pos_cases,
+ #   main = "ACF of Monthly Cases")
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Examine Autocorrelation 
+# Partial Autocorrelation Function (PACF)
+#pacf(ts_pos_cases,
+ #    main = "PACF of monthly cases")
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Plot 
+ggplot(aggreg_counts, aes(month, positive_cases)) +
+  geom_line(color = "black", linewidth = 0.7) +
+  geom_smooth(se = FALSE, color = "blue", linewidth = 1.2) +
+  labs(
+    title = "Monthly Positive Cases Over Time",
+    subtitle = "Observed monthly counts with smoothed trend",
+    x = "Month",
+    y = "Positive Cases"
+  ) +
+  theme_classic(base_size = 14)
+```
+
+### Count Time Series Modeling
+
+Trend of monthly positive cases @fig-ttcases
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-ttcases
+#| fig-cap: "Monthly Positive Cases"
+# Visualize Time Trend
+
+library(ggplot2)
+
+ggplot(aggreg_counts,
+       aes(x = month,
+           y = positive_cases)) +
+  geom_line() +
+  geom_point() 
+  #labs(
+   # title = "Monthly Positive Cases",
+  #  x = "Month",
+   # y = "Positive Cases"
+  #)
+```
+
+#### Poisson Time Series Model
+
+Although the outcome consists of count data suitable for Poisson-based modeling, the observed autocorrelation, trend, and seasonal dependence indicate that simple Poisson regression would inadequately account for temporal dependence. Time-series count models incorporating autoregressive and seasonal structures, such as SARIMA, GLARMA, INGARCH, or Negative Binomial GAM frameworks, are likely more appropriate for robust inference and forecasting.
+
+Baseline poisson model is @tbl-bpm
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-bpm
+#| tbl-cap: "Baseline Poisson Time-Series Model"
+# Fit Baseline Poisson Time-Series Model
+pois_model <- glm(
+  positive_cases ~ time,
+  family = poisson(),
+  data = model_data
+)
+
+# summary(pois_model)
+
+knitr::kable(round(summary(pois_model)$coefficients, 3))
+
+```
+
+##### Assessment
+
+Overdespersion of poisson regression model @tbl-ovdtest
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-ovdtest
+#| tbl-cap: "Overdispersion Test for Poisson Time-Series Model-1"
+# Check Overdispersion
+library(performance)
+
+od <- check_overdispersion(pois_model)
+
+od_df <- data.frame(
+  Dispersion_Ratio = round(od$dispersion_ratio, 3),
+  Pearson_Chi2 = round(od$chisq_statistic, 3),
+  P_Value = round(od$p_value, 3)
+)
+
+knitr::kable(
+  od_df)
+```
+
+#### Negative binomial time-series model
+
+Negative binomial time-series model @tbl-nbtsm
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-nbtsm
+#| tbl-cap: "Negative Binomial Time-Series Model"
+#### Fit Negative Binomial Time-Series Model
+library(MASS)
+
+nb_model <- glm.nb(
+  positive_cases ~ site_province + district_name + site_name + time,
+  data = model_data
+)
+
+# summary(nb_model)
+
+knitr::kable(round(summary(nb_model)$coefficients, 3))
+
+```
+
+Negative binomial time series model by adding seasonality @tbl-nbseason
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-nbseason
+#| tbl-cap: "Seasonal Negative Binomial Time-Series Model"
+# Add Seasonality
+model_data$month_num <-
+  month(model_data$month)
+
+nb_seasonal <- glm.nb(
+  positive_cases ~ site_province + district_name + site_name + time + factor(month_num),
+  data = model_data
+)
+
+# summary(nb_seasonal)
+
+knitr::kable(round(summary(nb_seasonal)$coefficients, 3))
+```
+
+Negative binomial time series models by adding offset @tbl-nboffset
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-nboffset
+#| tbl-cap: "Negative Binomial Time-Series Model- Adding offset"
+# Add Population Offset
+nb_offset <- glm.nb(
+  positive_cases ~ site_province + district_name + site_name + time +
+    offset(log(total_tests)),
+  data = model_data
+)
+
+# summary(nb_offset)
+
+knitr::kable(round(summary(nb_seasonal)$coefficients, 3))
+```
+
+### Mixed effects NB
+
+GLMM negative binomial time series models is give as @tbl-nbglmm
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-nbglmm
+#| tbl-cap: "Mixed Effects Negative Binomial Time-Series Model"
+# GLMM (Mixed Effect NB Model)
+nb_glmm <- glmer.nb(positive_cases ~ time + (1 | site_province), data = model_data)
+
+summary(nb_glmm)
+knitr::kable(round(summary(nb_glmm)$coefficients, 3))
+```
+
+##### Negative Binomial Mixed MOdel
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Negative Binomial Mixed Model
+library(glmmTMB)
+nb_lmixed = glmmTMB(
+  positive_cases ~ + time + factor(month_num) + (1 | site_name),
+  family = nbinom2,
+  data = model_data
+)
+
+summary(nb_lmixed)
+
+```
+
+##### Comparison of negative binomial models @tbl-nbcomparison
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-nbcomparison
+#| tbl-cap: "Negative Binomial Time-Series Models comparison"
+# Compare Models
+aicc=AIC(pois_model, nb_model, nb_seasonal, nb_offset, nb_glmm, nb_lmixed)
+
+knitr::kable(round(aicc, 3))
+
+```
+
+### Model Diagnostics
+
+```{r}
+library(DHARMa)
+# Check for dispersion, Zero inflation, residual patterns
+# simulate residuals
+sim_resi <- simulateResiduals(nb_lmixed)
+plot(sim_resi)
+```
+
+```{r}
+#library(DHARMa)
+# Test temporal autocorrelation
+#testTemporalAutocorrelation(
+ # sim_resi,
+#time = model_data$unique(time),
+#  group = model_data$site_name
+#)
+```
+
+#### Add Laged Outcome
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+model_data <- model_data %>%
+  arrange(site_name, month) %>%
+  group_by(site_name) %>%
+  mutate(lag_cases = lag(positive_cases))
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# Negative Binomial Mixed Model
+library(glmmTMB)
+nb_lmixed1 = glmmTMB(
+  positive_cases ~ + lag_cases + time + factor(month_num) + (1 | site_name),
+  family = nbinom2,
+  data = model_data
+)
+
+summary(nb_lmixed1)
+```
+
+```{r}
+AIC(nb_lmixed, nb_lmixed1)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+# predict expected values
+#model_data$mu <- predict(nb_lmixed1, type = "response")
+# plot(model_data$mu)
+# compute residual risk
+# residual <- model_data$positive_cases - model_data$mu
+# flag anomalies
+# model_data$alert <- model_data$positive_cases >
+#  qnbinom(0.95, mu = model_data$mu, size = theta)
+```
