@@ -329,7 +329,7 @@ AIC(model1, model2)
 
 ## Hierarchical Analysis based on the selected Modlel
 
-From the advanced three level hierarchical modeling @tbl-m3lr, a generalized linear mixed model with a random intercept for site was fitted to assess geographic predictors of HAV positivity. Site-level clustering was low (ICC ≈ ). Significant district-level differences were observed, with Buffalo City MM associated with lower odds of HAV positivity and Frances Baard DM associated with substantially higher odds. Province-level effects were not statistically significant after adjustment. The model exhibited rank deficiency due to collinearity between district and province variables.
+From the hierarchical modeling @tbl-m3lr, a generalized linear mixed model with a random intercept for site was fitted to assess geographic predictors of HAV positivity. Site-name clustering was low (ICC ≈ 0.095). Significant district-level differences were observed, with Buffalo City MM associated with lower odds of HAV positivity and Frances Baard DM associated with substantially higher odds. Province-level effects were not statistically significant after adjustment. The model exhibited rank deficiency due to collinearity between district and province variables.
 
 ```{r}
 #| warning: false
@@ -338,12 +338,8 @@ From the advanced three level hierarchical modeling @tbl-m3lr, a generalized lin
 #| label: tbl-m3lr
 #| tbl-cap: "Three level Multilevel Logistic Regression"
 #######################################
-# Next Advanced Analyses
-##################################
-
 ### Multilevel Logistic Regression
 
-# More Advanced Hierarchy
 summary(model2)
 # knitr::kable(round(summary(model2)$coefficients, 3))
  #vc2=as.data.frame(VarCorr(model2))
@@ -673,6 +669,58 @@ ts_pos_cases1 <- ts(aggreg_counts$positive_cases, frequency = 12)
 
 ### Decomposition Plot
 
+The decomposition plot revealed a pronounced seasonal pattern with consistent periodic oscillations throughout the study period. The trend component demonstrated a gradual increase followed by substantial fluctuations, indicating nonstationary behavior and possible nonlinear temporal dynamics. Residual variability increased over time, suggesting heteroscedasticity and the presence of unexplained irregular fluctuations or outbreak-like events. Overall, the findings support the inclusion of seasonal and nonlinear temporal terms in subsequent modeling approaches.
+
+-   The time series decomposition plot separates the observed series in to four parts.
+
+    -   Data (observed series)
+
+    -   Seasonal component
+
+    -   Trend component
+
+    -   Residual
+
+-   Observed data: presence both trend and seasonality.
+
+    -   There is fluctuations over time.
+
+    -   Variability appear to increase after around time 50 -60.
+
+    -   peak become become in later period
+
+-   Seasonal component: seasonality appears consistent.
+
+    -   Very regular oscillations
+
+    <!-- -->
+
+    -    Stable repeating cycles across the whole time period
+
+    <!-- -->
+
+    -    Seasonal effect magnitude remains relatively constant
+
+-   Trend component: nonlinear increasing trend in the series
+
+    -   Slow increase initially
+
+    <!-- -->
+
+    -    Strong upward movement around time ≈ 50–70
+
+    <!-- -->
+
+    -    Then fluctuating but remaining elevated
+
+-   Residual component: the unexplained part after removing trend and seasonality
+
+    -   Residuals centered around zero
+
+    <!-- -->
+
+    -    Residual variability increases over time
+
 ```{r}
 #| warning: false
 #| message: false
@@ -720,7 +768,7 @@ ggplot(aggreg_counts, aes(month, positive_cases)) +
   theme_classic(base_size = 14)
 ```
 
-### Count Time Series Modeling
+### Count (Poisson) Time Series Modeling
 
 Trend of monthly positive cases @fig-ttcases
 

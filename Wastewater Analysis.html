@@ -112,12 +112,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#time-series-analysis-after-areal-aggregation" id="toc-time-series-analysis-after-areal-aggregation" class="nav-link" data-scroll-target="#time-series-analysis-after-areal-aggregation"><span class="header-section-number">2.5</span> Time Series Analysis after areal Aggregation</a>
   <ul class="collapse">
-  <li><a href="#add-moving-average-line-1" id="toc-add-moving-average-line-1" class="nav-link" data-scroll-target="#add-moving-average-line-1"><span class="header-section-number">2.5.1</span> Add Moving Average line</a></li>
-  <li><a href="#detect-outbreaks-1" id="toc-detect-outbreaks-1" class="nav-link" data-scroll-target="#detect-outbreaks-1"><span class="header-section-number">2.5.2</span> Detect Outbreaks</a></li>
-  <li><a href="#decomposition-plot" id="toc-decomposition-plot" class="nav-link" data-scroll-target="#decomposition-plot"><span class="header-section-number">2.5.3</span> Decomposition Plot</a></li>
-  <li><a href="#count-time-series-modeling" id="toc-count-time-series-modeling" class="nav-link" data-scroll-target="#count-time-series-modeling"><span class="header-section-number">2.5.4</span> Count Time Series Modeling</a></li>
-  <li><a href="#mixed-effects-nb" id="toc-mixed-effects-nb" class="nav-link" data-scroll-target="#mixed-effects-nb"><span class="header-section-number">2.5.5</span> Mixed effects NB</a></li>
-  <li><a href="#model-diagnostics-1" id="toc-model-diagnostics-1" class="nav-link" data-scroll-target="#model-diagnostics-1"><span class="header-section-number">2.5.6</span> Model Diagnostics</a></li>
+  <li><a href="#trend-analysis-for-the-areal-data-plot" id="toc-trend-analysis-for-the-areal-data-plot" class="nav-link" data-scroll-target="#trend-analysis-for-the-areal-data-plot"><span class="header-section-number">2.5.1</span> Trend Analysis for the areal data plot</a></li>
+  <li><a href="#add-moving-average-line-for-the-areal-data-plot" id="toc-add-moving-average-line-for-the-areal-data-plot" class="nav-link" data-scroll-target="#add-moving-average-line-for-the-areal-data-plot"><span class="header-section-number">2.5.2</span> Add Moving Average line for the areal data plot</a></li>
+  <li><a href="#detect-outbreaks-1" id="toc-detect-outbreaks-1" class="nav-link" data-scroll-target="#detect-outbreaks-1"><span class="header-section-number">2.5.3</span> Detect Outbreaks</a></li>
+  <li><a href="#decomposition-plot" id="toc-decomposition-plot" class="nav-link" data-scroll-target="#decomposition-plot"><span class="header-section-number">2.5.4</span> Decomposition Plot</a></li>
+  <li><a href="#count-time-series-modeling" id="toc-count-time-series-modeling" class="nav-link" data-scroll-target="#count-time-series-modeling"><span class="header-section-number">2.5.5</span> Count Time Series Modeling</a></li>
+  <li><a href="#mixed-effects-nb" id="toc-mixed-effects-nb" class="nav-link" data-scroll-target="#mixed-effects-nb"><span class="header-section-number">2.5.6</span> Mixed effects NB</a></li>
+  <li><a href="#model-diagnostics-1" id="toc-model-diagnostics-1" class="nav-link" data-scroll-target="#model-diagnostics-1"><span class="header-section-number">2.5.7</span> Model Diagnostics</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -474,7 +475,7 @@ model2 17 7547.032</code></pre>
 </section>
 <section id="hierarchical-analysis-based-on-the-selected-modlel" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="hierarchical-analysis-based-on-the-selected-modlel"><span class="header-section-number">2.3</span> Hierarchical Analysis based on the selected Modlel</h2>
-<p>From the advanced three level hierarchical modeling <a href="#tbl-m3lr" class="quarto-xref">Table&nbsp;5</a>, a generalized linear mixed model with a random intercept for site was fitted to assess geographic predictors of HAV positivity. Site-level clustering was low (ICC ≈ ). Significant district-level differences were observed, with Buffalo City MM associated with lower odds of HAV positivity and Frances Baard DM associated with substantially higher odds. Province-level effects were not statistically significant after adjustment. The model exhibited rank deficiency due to collinearity between district and province variables.</p>
+<p>From the hierarchical modeling <a href="#tbl-m3lr" class="quarto-xref">Table&nbsp;5</a>, a generalized linear mixed model with a random intercept for site was fitted to assess geographic predictors of HAV positivity. Site-name clustering was low (ICC ≈ 0.095). Significant district-level differences were observed, with Buffalo City MM associated with lower odds of HAV positivity and Frances Baard DM associated with substantially higher odds. Province-level effects were not statistically significant after adjustment. The model exhibited rank deficiency due to collinearity between district and province variables.</p>
 <div id="tbl-m3lr" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-m3lr-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -717,6 +718,9 @@ frequency of outliers (expected: 0.00796812749003984 )
 </section>
 <section id="time-trend-analysis" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="time-trend-analysis"><span class="header-section-number">2.4</span> Time Trend Analysis</h2>
+<ul>
+<li>In this section, outcome of the dataset aggregated by month only. We can check it by <code>str(monthly_count</code>).</li>
+</ul>
 <p>Monthly hav case over time <a href="#fig-moncases" class="quarto-xref">Figure&nbsp;3</a> shows a clear shift from very low hav case counts in 2020/2021 to 2022 to a major surge beginning in early 2024, followed by a gradual decline with continued variability through 2025-2026.</p>
 <ul>
 <li>Structural change beginning around 2023.A major epidemic wave in 2024.</li>
@@ -777,7 +781,16 @@ Figure&nbsp;3: Monthly hav case over time
 </section>
 <section id="time-series-analysis-after-areal-aggregation" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="time-series-analysis-after-areal-aggregation"><span class="header-section-number">2.5</span> Time Series Analysis after areal Aggregation</h2>
-<p>Creating Model data from the original dataset</p>
+<ul>
+<li><p>In this section, outcome of the dataset aggregated by month, site_province, district_name, and site_name. We can check it by <code>str(aggreg_counts</code>).</p></li>
+<li><p>All analysis and results are similar with previous section.</p></li>
+<li><p>The only difference is the data structure.</p></li>
+</ul>
+<ul>
+<li>Creating areal data from the original dataset grouping by (month, site_province, district_name, and site_name)</li>
+</ul>
+<section id="trend-analysis-for-the-areal-data-plot" class="level3" data-number="2.5.1">
+<h3 data-number="2.5.1" class="anchored" data-anchor-id="trend-analysis-for-the-areal-data-plot"><span class="header-section-number">2.5.1</span> Trend Analysis for the areal data plot</h3>
 <p>Monthly hav case over time <a href="#fig-moncases1" class="quarto-xref">Figure&nbsp;4</a> shows a clear shift from very low hav case counts in 2020/2021 to 2022 to a major surge beginning in early 2024, followed by a gradual decline with continued variability through 2025-2026.</p>
 <ul>
 <li>Structural change beginning around 2023.A major epidemic wave in 2024.</li>
@@ -801,8 +814,9 @@ Figure&nbsp;4: Monthly hav case over time-1
 </div>
 </div>
 </div>
-<section id="add-moving-average-line-1" class="level3" data-number="2.5.1">
-<h3 data-number="2.5.1" class="anchored" data-anchor-id="add-moving-average-line-1"><span class="header-section-number">2.5.1</span> Add Moving Average line</h3>
+</section>
+<section id="add-moving-average-line-for-the-areal-data-plot" class="level3" data-number="2.5.2">
+<h3 data-number="2.5.2" class="anchored" data-anchor-id="add-moving-average-line-for-the-areal-data-plot"><span class="header-section-number">2.5.2</span> Add Moving Average line for the areal data plot</h3>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -813,8 +827,8 @@ Figure&nbsp;4: Monthly hav case over time-1
 </div>
 </div>
 </section>
-<section id="detect-outbreaks-1" class="level3" data-number="2.5.2">
-<h3 data-number="2.5.2" class="anchored" data-anchor-id="detect-outbreaks-1"><span class="header-section-number">2.5.2</span> Detect Outbreaks</h3>
+<section id="detect-outbreaks-1" class="level3" data-number="2.5.3">
+<h3 data-number="2.5.3" class="anchored" data-anchor-id="detect-outbreaks-1"><span class="header-section-number">2.5.3</span> Detect Outbreaks</h3>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -825,8 +839,55 @@ Figure&nbsp;4: Monthly hav case over time-1
 </div>
 </div>
 </section>
-<section id="decomposition-plot" class="level3" data-number="2.5.3">
-<h3 data-number="2.5.3" class="anchored" data-anchor-id="decomposition-plot"><span class="header-section-number">2.5.3</span> Decomposition Plot</h3>
+<section id="decomposition-plot" class="level3" data-number="2.5.4">
+<h3 data-number="2.5.4" class="anchored" data-anchor-id="decomposition-plot"><span class="header-section-number">2.5.4</span> Decomposition Plot</h3>
+<ul>
+<li><p>The time series decomposition plot separates the observed series in to four parts.</p>
+<ul>
+<li><p>Data (observed series)</p></li>
+<li><p>Seasonal component</p></li>
+<li><p>Trend component</p></li>
+<li><p>Residual</p></li>
+</ul></li>
+<li><p>Observed data: presence both trend and seasonality.</p>
+<ul>
+<li><p>There is fluctuations over time.</p></li>
+<li><p>Variability appear to increase after around time 50 -60.</p></li>
+<li><p>peak become become in later period</p></li>
+</ul></li>
+<li><p>Seasonal component: seasonality appears consistent.</p>
+<ul>
+<li>Very regular oscillations</li>
+</ul>
+<!-- -->
+<ul>
+<li>Stable repeating cycles across the whole time period</li>
+</ul>
+<!-- -->
+<ul>
+<li>Seasonal effect magnitude remains relatively constant</li>
+</ul></li>
+<li><p>Trend component: nonlinear increasing trend in the series</p>
+<ul>
+<li>Slow increase initially</li>
+</ul>
+<!-- -->
+<ul>
+<li>Strong upward movement around time ≈ 50–70</li>
+</ul>
+<!-- -->
+<ul>
+<li>Then fluctuating but remaining elevated</li>
+</ul></li>
+<li><p>Residual component: the unexplained part after removing trend and seasonality</p>
+<ul>
+<li>Residuals centered around zero</li>
+</ul>
+<!-- -->
+<ul>
+<li>Residual variability increases over time</li>
+</ul></li>
+</ul>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -846,8 +907,8 @@ Figure&nbsp;4: Monthly hav case over time-1
 </div>
 </div>
 </section>
-<section id="count-time-series-modeling" class="level3" data-number="2.5.4">
-<h3 data-number="2.5.4" class="anchored" data-anchor-id="count-time-series-modeling"><span class="header-section-number">2.5.4</span> Count Time Series Modeling</h3>
+<section id="count-time-series-modeling" class="level3" data-number="2.5.5">
+<h3 data-number="2.5.5" class="anchored" data-anchor-id="count-time-series-modeling"><span class="header-section-number">2.5.5</span> Count Time Series Modeling</h3>
 <p>Trend of monthly positive cases <a href="#fig-ttcases" class="quarto-xref">Figure&nbsp;5</a></p>
 <div class="cell">
 <div class="cell-output-display">
@@ -863,8 +924,8 @@ Figure&nbsp;5: Monthly Positive Cases
 </div>
 </div>
 </div>
-<section id="poisson-time-series-model" class="level4" data-number="2.5.4.1">
-<h4 data-number="2.5.4.1" class="anchored" data-anchor-id="poisson-time-series-model"><span class="header-section-number">2.5.4.1</span> Poisson Time Series Model</h4>
+<section id="poisson-time-series-model" class="level4" data-number="2.5.5.1">
+<h4 data-number="2.5.5.1" class="anchored" data-anchor-id="poisson-time-series-model"><span class="header-section-number">2.5.5.1</span> Poisson Time Series Model</h4>
 <p>Although the outcome consists of count data suitable for Poisson-based modeling, the observed autocorrelation, trend, and seasonal dependence indicate that simple Poisson regression would inadequately account for temporal dependence. Time-series count models incorporating autoregressive and seasonal structures, such as SARIMA, GLARMA, INGARCH, or Negative Binomial GAM frameworks, are likely more appropriate for robust inference and forecasting.</p>
 <p>Baseline poisson model is <a href="#tbl-bpm" class="quarto-xref">Table&nbsp;7</a></p>
 <div class="cell">
@@ -907,8 +968,8 @@ Table&nbsp;7: Baseline Poisson Time-Series Model
 </figure>
 </div>
 </div>
-<section id="assessment" class="level5" data-number="2.5.4.1.1">
-<h5 data-number="2.5.4.1.1" class="anchored" data-anchor-id="assessment"><span class="header-section-number">2.5.4.1.1</span> Assessment</h5>
+<section id="assessment" class="level5" data-number="2.5.5.1.1">
+<h5 data-number="2.5.5.1.1" class="anchored" data-anchor-id="assessment"><span class="header-section-number">2.5.5.1.1</span> Assessment</h5>
 <p>Overdespersion of poisson regression model <a href="#tbl-ovdtest" class="quarto-xref">Table&nbsp;8</a></p>
 <div class="cell">
 <div id="tbl-ovdtest" class="cell quarto-float quarto-figure quarto-figure-center anchored">
@@ -941,8 +1002,8 @@ Table&nbsp;8: Overdispersion Test for Poisson Time-Series Model-1
 </div>
 </section>
 </section>
-<section id="negative-binomial-time-series-model" class="level4" data-number="2.5.4.2">
-<h4 data-number="2.5.4.2" class="anchored" data-anchor-id="negative-binomial-time-series-model"><span class="header-section-number">2.5.4.2</span> Negative binomial time-series model</h4>
+<section id="negative-binomial-time-series-model" class="level4" data-number="2.5.5.2">
+<h4 data-number="2.5.5.2" class="anchored" data-anchor-id="negative-binomial-time-series-model"><span class="header-section-number">2.5.5.2</span> Negative binomial time-series model</h4>
 <p>Negative binomial time-series model <a href="#tbl-nbtsm" class="quarto-xref">Table&nbsp;9</a></p>
 <div class="cell">
 <div id="tbl-nbtsm" class="cell quarto-float quarto-figure quarto-figure-center anchored">
@@ -2482,8 +2543,8 @@ Table&nbsp;11: Negative Binomial Time-Series Model- Adding offset
 </div>
 </section>
 </section>
-<section id="mixed-effects-nb" class="level3" data-number="2.5.5">
-<h3 data-number="2.5.5" class="anchored" data-anchor-id="mixed-effects-nb"><span class="header-section-number">2.5.5</span> Mixed effects NB</h3>
+<section id="mixed-effects-nb" class="level3" data-number="2.5.6">
+<h3 data-number="2.5.6" class="anchored" data-anchor-id="mixed-effects-nb"><span class="header-section-number">2.5.6</span> Mixed effects NB</h3>
 <p>GLMM negative binomial time series models is give as <a href="#tbl-nbglmm" class="quarto-xref">Table&nbsp;12</a></p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -2557,8 +2618,8 @@ Table&nbsp;12: Mixed Effects Negative Binomial Time-Series Model
 </figure>
 </div>
 </div>
-<section id="negative-binomial-mixed-model" class="level5" data-number="2.5.5.0.1">
-<h5 data-number="2.5.5.0.1" class="anchored" data-anchor-id="negative-binomial-mixed-model"><span class="header-section-number">2.5.5.0.1</span> Negative Binomial Mixed MOdel</h5>
+<section id="negative-binomial-mixed-model" class="level5" data-number="2.5.6.0.1">
+<h5 data-number="2.5.6.0.1" class="anchored" data-anchor-id="negative-binomial-mixed-model"><span class="header-section-number">2.5.6.0.1</span> Negative Binomial Mixed MOdel</h5>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: nbinom2  ( log )
@@ -2597,8 +2658,8 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
 </div>
 </section>
-<section id="comparison-of-negative-binomial-models-tbl-nbcomparison" class="level5" data-number="2.5.5.0.2">
-<h5 data-number="2.5.5.0.2" class="anchored" data-anchor-id="comparison-of-negative-binomial-models-tbl-nbcomparison"><span class="header-section-number">2.5.5.0.2</span> Comparison of negative binomial models <a href="#tbl-nbcomparison" class="quarto-xref">Table&nbsp;13</a></h5>
+<section id="comparison-of-negative-binomial-models-tbl-nbcomparison" class="level5" data-number="2.5.6.0.2">
+<h5 data-number="2.5.6.0.2" class="anchored" data-anchor-id="comparison-of-negative-binomial-models-tbl-nbcomparison"><span class="header-section-number">2.5.6.0.2</span> Comparison of negative binomial models <a href="#tbl-nbcomparison" class="quarto-xref">Table&nbsp;13</a></h5>
 <div class="cell">
 <div id="tbl-nbcomparison" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -2655,8 +2716,8 @@ Table&nbsp;13: Negative Binomial Time-Series Models comparison
 </div>
 </section>
 </section>
-<section id="model-diagnostics-1" class="level3" data-number="2.5.6">
-<h3 data-number="2.5.6" class="anchored" data-anchor-id="model-diagnostics-1"><span class="header-section-number">2.5.6</span> Model Diagnostics</h3>
+<section id="model-diagnostics-1" class="level3" data-number="2.5.7">
+<h3 data-number="2.5.7" class="anchored" data-anchor-id="model-diagnostics-1"><span class="header-section-number">2.5.7</span> Model Diagnostics</h3>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DHARMa)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for dispersion, Zero inflation, residual patterns</span></span>
@@ -2680,8 +2741,8 @@ Table&nbsp;13: Negative Binomial Time-Series Models comparison
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">#  group = model_data$site_name</span></span>
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<section id="add-laged-outcome" class="level4" data-number="2.5.6.1">
-<h4 data-number="2.5.6.1" class="anchored" data-anchor-id="add-laged-outcome"><span class="header-section-number">2.5.6.1</span> Add Laged Outcome</h4>
+<section id="add-laged-outcome" class="level4" data-number="2.5.7.1">
+<h4 data-number="2.5.7.1" class="anchored" data-anchor-id="add-laged-outcome"><span class="header-section-number">2.5.7.1</span> Add Laged Outcome</h4>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: nbinom2  ( log )
