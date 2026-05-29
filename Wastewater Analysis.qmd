@@ -164,10 +164,10 @@ monthly_trend <- waste_analysis %>%
 #| echo: false
 #| label: fig-ptrend
 #| fig-cap: "Monthly Positivity Trend"
-#ggplot(monthly_trend,
- #      aes(x = month, y = positivity)) +
-#  geom_line() +
-#  geom_point()
+ggplot(monthly_trend,
+      aes(x = month, y = positivity)) +
+  geom_line() +
+  geom_point()
 
 ```
 
@@ -262,31 +262,34 @@ model_site_name <- glmer(
   family = binomial()
 )
 
-# Random intercept for site_name
+# Random intercept models for site_name
 
 model1 <- glmer(
   hav_result_bin ~ site_province + (1 | site_name),
   data = waste_analysis,
   family = binomial()
-)
+  )
 
-# More Advanced Hierarchy (three level)
 model2 <- glmer(
   hav_result_bin ~ site_province + district_name + (1 | site_name),
   data = waste_analysis,
   family = binomial()
 )
+
 ```
+
+An intraclass correlation coefficient (ICC) of 0.033 means that about 3.3% of the total variance in the HAV is attributable to differences between site_province, while about 96.7% is due to differences within groups (individual-level variation).
 
 ```{r}
 #| warning: false
 #| message: false
 #| echo: false
 performance::icc(model_province)
-
 ```
 
 ### Intraclass Correlation for District_name Variation
+
+An intraclass correlation coefficient (ICC) of 0.054 means that about 5.4 % of the total variance in the HAV is attributable to differences between district level.
 
 ```{r}
 #| warning: false
@@ -296,6 +299,10 @@ performance::icc(model_district)
 ```
 
 ### Intraclass Correlation for site_name Variation
+
+An intraclass correlation coefficient (ICC) of 0.095 means that about 9.5 % of the total variance in the HAV is attributable to differences between district level.
+
+Overall:
 
 ```{r}
 #| warning: false
@@ -308,7 +315,7 @@ performance::icc(model_site_name)
 
 -   Relatively the variation is higher in site_name level (ICC ≈ 9.5%)
 
--   @tbl-mlrim indicates, model2; the three level mixed effects model better fits the data.
+-   @tbl-mlrim indicates, model4; the three level mixed effects model better fits the data.
 
 ```{r}
 #| warning: false
@@ -320,9 +327,9 @@ performance::icc(model_site_name)
 AIC(model1, model2)
 ```
 
-## Three-Level Hierarchical Analysis based on the selected Modlel
+## Hierarchical Analysis based on the selected Modlel
 
-From the advanced three level hierarchical modeling @tbl-m3lr
+From the advanced three level hierarchical modeling @tbl-m3lr, a generalized linear mixed model with a random intercept for site was fitted to assess geographic predictors of HAV positivity. Site-level clustering was low (ICC ≈ ). Significant district-level differences were observed, with Buffalo City MM associated with lower odds of HAV positivity and Frances Baard DM associated with substantially higher odds. Province-level effects were not statistically significant after adjustment. The model exhibited rank deficiency due to collinearity between district and province variables.
 
 ```{r}
 #| warning: false
@@ -337,11 +344,6 @@ From the advanced three level hierarchical modeling @tbl-m3lr
 ### Multilevel Logistic Regression
 
 # More Advanced Hierarchy
-model2 <- glmer(
-  hav_result_bin ~ site_province + district_name + (1 | site_name),
-  data = waste_analysis,
-  family = binomial()
-)
 summary(model2)
 # knitr::kable(round(summary(model2)$coefficients, 3))
  #vc2=as.data.frame(VarCorr(model2))
@@ -371,15 +373,6 @@ knitr::kable(
 )
 ```
 
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-# Model Performance
-#performance(model2)
-#knitr::kable(round(performance(model2),3), caption = "Model Performance")
-```
-
 ### Visualization of Model Results
 
 Visualization plot @fig-mr3
@@ -399,6 +392,8 @@ sjPlot::plot_model(
 ```
 
 ### Model Diagnostics
+
+-   Residual diagnostics indicated mild deviations from the expected residual distribution, although no significant overdispersion or strong outlier effects were detected. Remaining structure in residuals suggests that additional predictors, particularly temporal effects, may improve model fit.
 
 ```{r}
 #| warning: false
@@ -424,6 +419,8 @@ testOutliers(sim_res)
 ```
 
 ## Time Trend Analysis
+
+-   In this section, outcome of the dataset aggregated by month only. We can check it by `str(monthly_count`).
 
 ```{r}
 #| warning: false
@@ -482,6 +479,8 @@ ggplot(monthly_counts, aes(x= month, y = positive_cases)) +
 
 ### Add Moving Average line
 
+-   The monthly positivity trend demonstrated substantial temporal variation, with a marked increase during 2024 followed by a gradual decline. The moving-average curve suggested a nonlinear temporal pattern.
+
 ```{r}
 #| warning: false
 #| message: false
@@ -500,13 +499,15 @@ ggplot(monthly_counts, aes(x = month)) +
   geom_point(aes(y = positive_cases), size = 1.5) +
   geom_line(aes(y = MA_3), color = "blue", linewidth = 1.2) +
   labs(
-    title = "Monthly Positive Cases",
+    title = "Monthly Positive Cases by adding MA line",
     y = "positive_cases"
   ) +
   theme_minimal()
 ```
 
 ### Detect Outbreaks
+
+-   Points doted by red line detected as outbreak at the time of 2024.
 
 ```{r}
 #| warning: false
@@ -532,6 +533,12 @@ ggplot(monthly_counts, aes(month, positive_cases)) +
 
 ## Time Series Analysis after areal Aggregation
 
+-   In this section, outcome of the dataset aggregated by month, site_province, district_name, and site_name. We can check it by `str(aggreg_counts`).
+
+-   All analysis and results are similar with previous section.
+
+-   The only difference is the data structure.
+
 ```{r}
 #| warning: false
 #| message: false
@@ -549,7 +556,7 @@ aggreg_counts <- waste_analysis %>%
   )
 ```
 
-Creating Model data from the original dataset
+-   Creating areal data from the original dataset grouping by (month, site_province, district_name, and site_name)
 
 ```{r}
 #| warning: false
@@ -566,6 +573,8 @@ aggreg_counts <- aggreg_counts  %>%
 model_data <- aggreg_counts %>%
   filter(!is.na(site_province), !is.na(district_name), !is.na(site_name), !is.na(month))
 ```
+
+### Trend Analysis for the areal data plot
 
 Monthly hav case over time @fig-moncases1 shows a clear shift from very low hav case counts in 2020/2021 to 2022 to a major surge beginning in early 2024, followed by a gradual decline with continued variability through 2025-2026.
 
@@ -592,7 +601,7 @@ ggplot(aggreg_counts, aes(x= month, y = positive_cases)) +
        y = "Number of cases")
 ```
 
-### Add Moving Average line
+### Add Moving Average line for the areal data plot
 
 ```{r}
 #| warning: false
