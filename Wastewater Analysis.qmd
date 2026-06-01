@@ -695,11 +695,11 @@ The decomposition plot revealed a pronounced seasonal pattern with consistent pe
 
     <!-- -->
 
-    -    Stable repeating cycles across the whole time period
+    -   Stable repeating cycles across the whole time period
 
     <!-- -->
 
-    -    Seasonal effect magnitude remains relatively constant
+    -   Seasonal effect magnitude remains relatively constant
 
 -   Trend component: nonlinear increasing trend in the series
 
@@ -707,11 +707,11 @@ The decomposition plot revealed a pronounced seasonal pattern with consistent pe
 
     <!-- -->
 
-    -    Strong upward movement around time ≈ 50–70
+    -   Strong upward movement around time ≈ 50–70
 
     <!-- -->
 
-    -    Then fluctuating but remaining elevated
+    -   Then fluctuating but remaining elevated
 
 -   Residual component: the unexplained part after removing trend and seasonality
 
@@ -719,7 +719,7 @@ The decomposition plot revealed a pronounced seasonal pattern with consistent pe
 
     <!-- -->
 
-    -    Residual variability increases over time
+    -   Residual variability increases over time
 
 ```{r}
 #| warning: false
@@ -981,6 +981,28 @@ plot(sim_resi)
 ```
 
 #### Add Laged Outcome
+
+Lag Effect (lag = 0.117, p \< 0.001)
+
+-   For every one-unit increase in the previous month's cases, the expected current case count increases by about 12.4%, holding other variables constant.
+
+Time Trend (time = 0.031, p \< 0.001)
+
+-   Each additional month is associated with about a 3.2% increase in expected cases, after adjusting for seasonality, lag effects, and site-level variation.
+
+Seasonal effects (Reference month= month1)
+
+-   Cases are about 57% higher in month 4 than in the reference month.
+
+Site random effect (Variance = 0.131, SD = 0.362)
+
+-   Indicates meaningful heterogeneity among sites.
+
+-   Some sites consistently experience higher or lower disease burdens than others, even after accounting for time, lag effects, and seasonality.
+
+Dispersion Parameter (Dispersion = 16.3)
+
+-   overdispersion exists, but the Negative Binomial model is explicitly accounting for it.
 
 ```{r}
 #| warning: false

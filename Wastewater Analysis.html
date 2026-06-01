@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="">
-<meta name="dcterms.date" content="2026-05-29">
+<meta name="dcterms.date" content="2026-06-01">
 
 <title>Wastewater_HAV Analysis</title>
 <style>
@@ -116,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#add-moving-average-line-for-the-areal-data-plot" id="toc-add-moving-average-line-for-the-areal-data-plot" class="nav-link" data-scroll-target="#add-moving-average-line-for-the-areal-data-plot"><span class="header-section-number">2.5.2</span> Add Moving Average line for the areal data plot</a></li>
   <li><a href="#detect-outbreaks-1" id="toc-detect-outbreaks-1" class="nav-link" data-scroll-target="#detect-outbreaks-1"><span class="header-section-number">2.5.3</span> Detect Outbreaks</a></li>
   <li><a href="#decomposition-plot" id="toc-decomposition-plot" class="nav-link" data-scroll-target="#decomposition-plot"><span class="header-section-number">2.5.4</span> Decomposition Plot</a></li>
-  <li><a href="#count-time-series-modeling" id="toc-count-time-series-modeling" class="nav-link" data-scroll-target="#count-time-series-modeling"><span class="header-section-number">2.5.5</span> Count Time Series Modeling</a></li>
+  <li><a href="#count-poisson-time-series-modeling" id="toc-count-poisson-time-series-modeling" class="nav-link" data-scroll-target="#count-poisson-time-series-modeling"><span class="header-section-number">2.5.5</span> Count (Poisson) Time Series Modeling</a></li>
   <li><a href="#mixed-effects-nb" id="toc-mixed-effects-nb" class="nav-link" data-scroll-target="#mixed-effects-nb"><span class="header-section-number">2.5.6</span> Mixed effects NB</a></li>
   <li><a href="#model-diagnostics-1" id="toc-model-diagnostics-1" class="nav-link" data-scroll-target="#model-diagnostics-1"><span class="header-section-number">2.5.7</span> Model Diagnostics</a></li>
   </ul></li>
@@ -139,7 +139,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">May 29, 2026</p>
+      <p class="date">June 1, 2026</p>
     </div>
   </div>
   
@@ -841,6 +841,7 @@ Figure&nbsp;4: Monthly hav case over time-1
 </section>
 <section id="decomposition-plot" class="level3" data-number="2.5.4">
 <h3 data-number="2.5.4" class="anchored" data-anchor-id="decomposition-plot"><span class="header-section-number">2.5.4</span> Decomposition Plot</h3>
+<p>The decomposition plot revealed a pronounced seasonal pattern with consistent periodic oscillations throughout the study period. The trend component demonstrated a gradual increase followed by substantial fluctuations, indicating nonstationary behavior and possible nonlinear temporal dynamics. Residual variability increased over time, suggesting heteroscedasticity and the presence of unexplained irregular fluctuations or outbreak-like events. Overall, the findings support the inclusion of seasonal and nonlinear temporal terms in subsequent modeling approaches.</p>
 <ul>
 <li><p>The time series decomposition plot separates the observed series in to four parts.</p>
 <ul>
@@ -907,8 +908,8 @@ Figure&nbsp;4: Monthly hav case over time-1
 </div>
 </div>
 </section>
-<section id="count-time-series-modeling" class="level3" data-number="2.5.5">
-<h3 data-number="2.5.5" class="anchored" data-anchor-id="count-time-series-modeling"><span class="header-section-number">2.5.5</span> Count Time Series Modeling</h3>
+<section id="count-poisson-time-series-modeling" class="level3" data-number="2.5.5">
+<h3 data-number="2.5.5" class="anchored" data-anchor-id="count-poisson-time-series-modeling"><span class="header-section-number">2.5.5</span> Count (Poisson) Time Series Modeling</h3>
 <p>Trend of monthly positive cases <a href="#fig-ttcases" class="quarto-xref">Figure&nbsp;5</a></p>
 <div class="cell">
 <div class="cell-output-display">
@@ -2743,6 +2744,27 @@ Table&nbsp;13: Negative Binomial Time-Series Models comparison
 </div>
 <section id="add-laged-outcome" class="level4" data-number="2.5.7.1">
 <h4 data-number="2.5.7.1" class="anchored" data-anchor-id="add-laged-outcome"><span class="header-section-number">2.5.7.1</span> Add Laged Outcome</h4>
+<p>Lag Effect (lag = 0.117, p &lt; 0.001)</p>
+<ul>
+<li>For every one-unit increase in the previous month’s cases, the expected current case count increases by about 12.4%, holding other variables constant.</li>
+</ul>
+<p>Time Trend (time = 0.031, p &lt; 0.001)</p>
+<ul>
+<li>Each additional month is associated with about a 3.2% increase in expected cases, after adjusting for seasonality, lag effects, and site-level variation.</li>
+</ul>
+<p>Seasonal effects (Reference month= month1)</p>
+<ul>
+<li>Cases are about 57% higher in month 4 than in the reference month.</li>
+</ul>
+<p>Site random effect (Variance = 0.131, SD = 0.362)</p>
+<ul>
+<li><p>Indicates meaningful heterogeneity among sites.</p></li>
+<li><p>Some sites consistently experience higher or lower disease burdens than others, even after accounting for time, lag effects, and seasonality.</p></li>
+</ul>
+<p>Dispersion Parameter (Dispersion = 16.3)</p>
+<ul>
+<li>overdispersion exists, but the Negative Binomial model is explicitly accounting for it.</li>
+</ul>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: nbinom2  ( log )
